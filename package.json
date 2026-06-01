@@ -1,0 +1,27 @@
+{
+  "name": "hono-api-02",
+  "module": "src/index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.16",
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^6.0.3"
+  },
+  "scripts": {
+    "dev": "bun --watch src/index.ts"
+  },
+  "dependencies": {
+    "arktype": "^2.2.0",
+    "hono": "^4.12.23",
+    "kysely": "^0.27.0",
+    "kysely-bun-sqlite": "^0.4.0",
+    "peta-auth": "^0.1.0",
+    "peta-hono": "0.2.5",
+    "peta-orm": "^0.1.0",
+    "pino": "^10.3.1",
+    "pino-pretty": "^13.1.3"
+  }
+}
