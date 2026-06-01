@@ -1,9 +1,11 @@
 import { Hono } from 'hono';
+import { HTTPException } from 'hono/http-exception';
 import { hashPassword, verifyPassword } from 'peta-auth';
 import { route } from 'peta-hono';
-import { requireAuth } from '../../middleware/auth';
-import { User } from '../../models/user';
-import type { AppEnv } from '../../types';
+import { unauthorized } from '@/errors';
+import { requireAuth } from '@/middleware/auth';
+import { User } from '@/models';
+import type { AppEnv } from '@/types';
 import { LoginBody, RegisterBody } from './schema';
 
 const auth = new Hono<AppEnv>();
@@ -18,7 +20,7 @@ auth.post(
     .handle(async (c) => {
       const { name, email, password } = c.req.valid('json');
       const existing = await User.query().where('email', '=', email).executeTakeFirst();
-      if (existing) return c.json({ error: 'Email already registered' }, 400);
+      if (existing) throw new HTTPException(400, { message: 'Email already registered' });
       const hashed = await hashPassword(password);
       const user = await User.insert({ name, email, password: hashed });
       const session = c.get('session');
@@ -38,9 +40,9 @@ auth.post(
     .handle(async (c) => {
       const { email, password } = c.req.valid('json');
       const user = await User.query().where('email', '=', email).executeTakeFirst();
-      if (!user) return c.json({ error: 'Invalid credentials' }, 401);
+      if (!user) throw unauthorized('Invalid credentials');
       const valid = await verifyPassword(user.get('password') as string, password);
-      if (!valid) return c.json({ error: 'Invalid credentials' }, 401);
+      if (!valid) throw unauthorized('Invalid credentials');
       const session = c.get('session');
       session.userId = user.get('id');
       await session.save();
@@ -53,6 +55,7 @@ auth.get(
   requireAuth,
   route()
     .summary('Get current user')
+    .auth('bearerAuth')
     .response(200, { description: 'Current user' })
     .response(401, { description: 'Not authenticated' })
     .handle(async (c) => {

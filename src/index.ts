@@ -1,14 +1,13 @@
 import { Hono } from 'hono';
+import { HTTPException } from 'hono/http-exception';
 import { session } from 'peta-auth/hono';
 import { getOpenAPISpec, loadRoutes, serveScalarUI } from 'peta-hono';
-import { peta, runMigrations } from './db';
-import logger from './logger';
-import { Comment } from './models/comment';
-import { Post } from './models/post';
-import { User } from './models/user';
-import type { AppEnv } from './types';
+import { peta, runMigrations } from '@/db';
+import { errorResponse } from '@/errors';
+import logger from '@/logger';
+import type { AppEnv } from '@/types';
 
-peta.registerAll([User, Post, Comment]);
+await peta.discover('./src/models/*.ts');
 await runMigrations();
 
 const app = new Hono<AppEnv>();
@@ -28,17 +27,59 @@ app.use('*', async (c, next) => {
   });
 });
 
-// app.route('/api/auth', auth);
-// app.route('/api/posts', posts);
-// app.route('/api', comments);
-
 // Auto-load routes from ./routes directory, mounted under /api
-await loadRoutes(app as unknown as Hono, new URL('./routes', import.meta.url).pathname, {
-  basePath: '/api',
+app.notFound((c) => errorResponse(c, 404, 'Not found'));
+
+app.onError((err, c) => {
+  logger.error({ err, method: c.req.method, path: c.req.path }, 'Unhandled error');
+
+  if (err instanceof HTTPException) {
+    return errorResponse(c, err.status, err.message || 'Error');
+  }
+
+  if (err.name === 'ModelNotFoundError') {
+    return errorResponse(c, 404, 'Not found');
+  }
+
+  if (err.name === 'ValidationError') {
+    return errorResponse(c, 400, 'Validation failed');
+  }
+
+  if (err.name === 'DatabaseError') {
+    const dbErr = err as unknown as { code: string };
+    if (dbErr.code === 'UNIQUE_CONSTRAINT') {
+      return errorResponse(c, 409, 'Conflict');
+    }
+    return errorResponse(c, 500, 'Database error');
+  }
+
+  if (
+    typeof err === 'object' &&
+    err !== null &&
+    'code' in err &&
+    err.code === 'SQLITE_CONSTRAINT_UNIQUE'
+  ) {
+    return errorResponse(c, 409, 'Conflict');
+  }
+
+  const message = process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message;
+  return c.json({ error: message }, 500);
 });
 
+await loadRoutes(app, new URL('./routes', import.meta.url).pathname);
+
 const info = { title: 'Blog API', version: '1.0.0' };
-app.get('/openapi.json', (c) => c.json(getOpenAPISpec(app, info, undefined, { basePath: '/api' })));
+app.get('/openapi.json', (c) =>
+  c.json(
+    getOpenAPISpec(app, info, undefined, {
+      components: {
+        securitySchemes: {
+          bearerAuth: { type: 'http', scheme: 'bearer' },
+        },
+      },
+    }),
+  ),
+);
 app.get('/docs', serveScalarUI({ specUrl: '/openapi.json' }));
 
 process.on('SIGINT', async () => {
@@ -48,3 +89,4 @@ process.on('SIGINT', async () => {
 
 const port = Number(process.env.PORT) || 4300;
 Bun.serve({ fetch: app.fetch, port });
+logger.info(`Server started at http://localhost:${port}`);

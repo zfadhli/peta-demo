@@ -1,5 +1,5 @@
 import type { MiddlewareHandler } from 'hono';
-import type { AppEnv } from '../types';
+import type { AppEnv } from '@/types';
 
 export const requireAuth: MiddlewareHandler<AppEnv> = async (c, next) => {
   const session = c.get('session');

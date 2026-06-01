@@ -1,5 +1,8 @@
 {
   "compilerOptions": {
+    "ignoreDeprecations": "6.0",
+    "paths": { "@/*": ["./src/*"] },
+
     // Environment setup & latest features
     "lib": ["ESNext", "DOM"],
     "target": "ESNext",
