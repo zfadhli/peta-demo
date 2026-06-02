@@ -1,5 +1,5 @@
 {
-  "name": "hono-api-02",
+  "name": "peta-demo",
   "module": "src/index.ts",
   "type": "module",
   "private": true,

@@ -1,6 +1,7 @@
 import type { ColumnShape, RelationMap } from 'peta-orm';
-import { $t, ArkTypeSchemaConfig, BelongsTo, HasMany, Model } from 'peta-orm';
+import { $t, ArkTypeSchemaConfig, BelongsTo, HasMany, ManyToMany, Model } from 'peta-orm';
 import { Comment } from './comment';
+import { Tag } from './tag';
 import { User } from './user';
 
 const t = $t({ schema: new ArkTypeSchemaConfig() });
@@ -22,7 +23,12 @@ export class Post extends Model {
   static override columns = columns;
   static override relations: RelationMap = {
     author: new BelongsTo(() => User),
-    comments: new HasMany(() => Comment),
+    comments: new HasMany(() => Comment, { foreignKey: 'postId' }),
+    tags: new ManyToMany(() => Tag, {
+      through: 'post_tags',
+      foreignPivotKey: 'postId',
+      relatedPivotKey: 'tagId',
+    }),
   };
   static override $visible = [
     'id',
@@ -34,6 +40,7 @@ export class Post extends Model {
     'updatedAt',
     'author',
     'comments',
+    'tags',
   ];
 }
 

@@ -51,18 +51,19 @@ posts.get(
   route()
     .summary('Get a post by ID')
     .params(PostParams)
-    .include(['author', 'comments'])
+    .include(['author', 'comments', 'tags'])
     .response(200, { description: 'Post with comments' })
     .handle(async (c) => {
       const { id } = c.req.valid('param');
-      const { include = ['author', 'comments'] } = c.req.valid('query');
+      const { include = ['author', 'comments', 'tags'] } = c.req.valid('query');
       const query = Post.query()
         .where('published', '=', 1)
         .where('id', '=', id)
         .when(include.includes('author'), (q) => q.with('author'))
         .when(include.includes('comments'), (q) =>
           q.with({ comments: (qb) => qb.orderBy('createdAt', 'asc') }),
-        );
+        )
+        .when(include.includes('tags'), (q) => q.with('tags'));
       const post = await query.executeTakeFirst();
       if (!post) throw notFound();
       return c.json(post.$toJSON());

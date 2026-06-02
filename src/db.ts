@@ -53,4 +53,22 @@ export async function runMigrations() {
     .addColumn('createdAt', 'text', (c) => c.notNull())
     .addColumn('updatedAt', 'text', (c) => c.notNull())
     .execute();
+
+  await db.schema
+    .createTable('tags')
+    .ifNotExists()
+    .addColumn('id', 'integer', (c) => c.autoIncrement().primaryKey())
+    .addColumn('name', 'text', (c) => c.notNull())
+    .addColumn('slug', 'text', (c) => c.notNull().unique())
+    .addColumn('createdAt', 'text', (c) => c.notNull())
+    .addColumn('updatedAt', 'text', (c) => c.notNull())
+    .execute();
+
+  await db.schema
+    .createTable('post_tags')
+    .ifNotExists()
+    .addColumn('postId', 'integer', (c) => c.notNull().references('posts.id'))
+    .addColumn('tagId', 'integer', (c) => c.notNull().references('tags.id'))
+    .addPrimaryKeyConstraint('post_tags_pk', ['postId', 'tagId'])
+    .execute();
 }
