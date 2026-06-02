@@ -20,8 +20,8 @@ bookmarks.get(
         .where('userId', '=', c.var.userId)
         .with('post')
         .orderBy('createdAt', 'desc')
-        .execute();
-      return c.json(results.map((b) => b.$toJSON()));
+        .collect();
+      return c.json(results.toJSON());
     }),
 );
 
@@ -39,7 +39,7 @@ bookmarks.post(
       const post = await Post.find(postId);
       if (!post) throw notFound();
       const bookmark = await Bookmark.insert({ postId, userId: c.var.userId });
-      return c.json(bookmark.$toJSON(), 201);
+      return c.json(bookmark.toJSON(), 201);
     }),
 );
 

@@ -9,8 +9,7 @@ const columns = {
   name: t.string(),
   email: t.string().unique(),
   password: t.string(),
-  createdAt: t.timestamp(),
-  updatedAt: t.timestamp(),
+  ...t.timestamps(),
 } satisfies ColumnShape;
 
 export class User extends Model {

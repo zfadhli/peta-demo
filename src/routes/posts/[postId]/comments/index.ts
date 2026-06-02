@@ -19,8 +19,8 @@ comments.get(
       const results = await Comment.query()
         .where('postId', '=', postId)
         .orderBy('createdAt', 'asc')
-        .execute();
-      return c.json(results.map((c) => c.$toJSON()));
+        .collect();
+      return c.json(results.toJSON());
     }),
 );
 
@@ -40,7 +40,7 @@ comments.post(
       const post = await Post.find(postId);
       if (!post) throw notFound();
       const comment = await Comment.insert({ content, postId, userId: c.var.userId });
-      return c.json(comment.$toJSON(), 201);
+      return c.json(comment.toJSON(), 201);
     }),
 );
 

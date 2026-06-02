@@ -10,8 +10,7 @@ const columns = {
   content: t.text(),
   postId: t.integer().references(() => Post, ['id']),
   userId: t.integer().references(() => User, ['id']),
-  createdAt: t.timestamp(),
-  updatedAt: t.timestamp(),
+  ...t.timestamps(),
 } satisfies ColumnShape;
 
 export class Comment extends Model {

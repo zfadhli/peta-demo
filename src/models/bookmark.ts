@@ -9,8 +9,7 @@ const columns = {
   id: t.integer().primaryKey(),
   userId: t.integer().references(() => User, ['id']),
   postId: t.integer().references(() => Post, ['id']),
-  createdAt: t.timestamp(),
-  updatedAt: t.timestamp(),
+  ...t.timestamps(),
 } satisfies ColumnShape;
 
 export class Bookmark extends Model {

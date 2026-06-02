@@ -14,8 +14,7 @@ const columns = {
   excerpt: t.string().nullable(),
   published: t.boolean().default(false),
   userId: t.integer().references(() => User, ['id']),
-  createdAt: t.timestamp(),
-  updatedAt: t.timestamp(),
+  ...t.timestamps(),
 } satisfies ColumnShape;
 
 export class Post extends Model {

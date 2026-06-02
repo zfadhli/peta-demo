@@ -7,8 +7,7 @@ const columns = {
   id: t.integer().primaryKey(),
   name: t.string(),
   slug: t.string().unique(),
-  createdAt: t.timestamp(),
-  updatedAt: t.timestamp(),
+  ...t.timestamps(),
 } satisfies ColumnShape;
 
 export class Tag extends Model {

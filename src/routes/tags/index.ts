@@ -14,8 +14,8 @@ tags.get(
     .summary('List all tags')
     .response(200, { description: 'All tags' })
     .handle(async (c) => {
-      const results = await Tag.query().orderBy('name', 'asc').execute();
-      return c.json(results.map((r) => r.$toJSON()));
+      const results = await Tag.query().orderBy('name', 'asc').collect();
+      return c.json(results.toJSON());
     }),
 );
 
@@ -29,7 +29,7 @@ tags.get(
       const { id } = c.req.valid('param');
       const tag = await Tag.find(id);
       if (!tag) throw notFound();
-      return c.json(tag.$toJSON());
+      return c.json(tag.toJSON());
     }),
 );
 
@@ -45,7 +45,7 @@ tags.post(
     .handle(async (c) => {
       const { name, slug } = c.req.valid('json');
       const tag = await Tag.insert({ name, slug });
-      return c.json(tag.$toJSON(), 201);
+      return c.json(tag.toJSON(), 201);
     }),
 );
 
@@ -65,7 +65,7 @@ tags.put(
       if (!tag) throw notFound();
       const { name, slug } = c.req.valid('json');
       const updated = await Tag.update(id, { name, slug });
-      return c.json(updated.$toJSON());
+      return c.json(updated.toJSON());
     }),
 );
 

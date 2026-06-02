@@ -66,7 +66,7 @@ posts.get(
         .when(include.includes('tags'), (q) => q.with('tags'));
       const post = await query.executeTakeFirst();
       if (!post) throw notFound();
-      return c.json(post.$toJSON());
+      return c.json(post.toJSON());
     }),
 );
 
@@ -89,7 +89,7 @@ posts.post(
         published: true,
         userId: c.var.userId,
       });
-      return c.json(post.$toJSON(), 201);
+      return c.json(post.toJSON(), 201);
     }),
 );
 
@@ -115,7 +115,7 @@ posts.put(
         content: data.content,
         excerpt: data.excerpt || null,
       });
-      return c.json(updated.$toJSON());
+      return c.json(updated.toJSON());
     }),
 );
 
