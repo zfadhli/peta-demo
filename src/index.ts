@@ -2,13 +2,18 @@ import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { session } from 'peta-auth/hono';
 import { getOpenAPISpec, loadRoutes, serveScalarUI } from 'peta-hono';
-import { peta, runMigrations } from '@/db';
+import { loadMigrationFiles, MigrationRunner } from 'peta-orm/migrator';
+import { peta } from '@/db';
 import { errorResponse } from '@/errors';
 import logger from '@/logger';
 import type { AppEnv } from '@/types';
 
-await peta.discover('./src/models/*.ts');
-await runMigrations();
+peta.discover('./src/models/*.ts');
+
+const runner = new MigrationRunner(peta.kysely);
+const migrations = await loadMigrationFiles('./migrations');
+await runner.ensureTable();
+await runner.up(migrations);
 
 const app = new Hono<AppEnv>();
 

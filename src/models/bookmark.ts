@@ -7,21 +7,20 @@ const t = $t({ schema: new ArkTypeSchemaConfig() });
 
 const columns = {
   id: t.integer().primaryKey(),
-  content: t.text(),
-  postId: t.integer().references(() => Post, ['id']),
   userId: t.integer().references(() => User, ['id']),
+  postId: t.integer().references(() => Post, ['id']),
   createdAt: t.timestamp(),
   updatedAt: t.timestamp(),
 } satisfies ColumnShape;
 
-export class Comment extends Model {
-  static override table = 'comments';
+export class Bookmark extends Model {
+  static override table = 'bookmarks';
   static override columns = columns;
   static override relations: RelationMap = {
+    user: new BelongsTo(() => User),
     post: new BelongsTo(() => Post),
-    author: new BelongsTo(() => User),
   };
-  static override $visible = ['id', 'content', 'userId', 'postId', 'createdAt'];
+  static override $visible = ['id', 'postId', 'userId', 'createdAt'];
 }
 
-Comment.registerTimestamps();
+Bookmark.registerTimestamps();

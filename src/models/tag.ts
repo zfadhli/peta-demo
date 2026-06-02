@@ -6,7 +6,7 @@ const t = $t({ schema: new ArkTypeSchemaConfig() });
 const columns = {
   id: t.integer().primaryKey(),
   name: t.string(),
-  slug: t.string(),
+  slug: t.string().unique(),
   createdAt: t.timestamp(),
   updatedAt: t.timestamp(),
 } satisfies ColumnShape;

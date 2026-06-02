@@ -9,11 +9,11 @@ const t = $t({ schema: new ArkTypeSchemaConfig() });
 const columns = {
   id: t.integer().primaryKey(),
   title: t.string(),
-  slug: t.string(),
+  slug: t.string().unique(),
   content: t.text(),
   excerpt: t.string().nullable(),
   published: t.boolean().default(false),
-  userId: t.integer(),
+  userId: t.integer().references(() => User, ['id']),
   createdAt: t.timestamp(),
   updatedAt: t.timestamp(),
 } satisfies ColumnShape;
