@@ -45,3 +45,16 @@ export class Post extends Model {
 }
 
 Post.registerTimestamps();
+
+Post.on('beforeCreate', (post) => {
+  if (!post.get('slug')) {
+    const title = post.get('title') as string;
+    post.set(
+      'slug',
+      title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, ''),
+    );
+  }
+});

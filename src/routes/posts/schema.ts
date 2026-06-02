@@ -6,7 +6,7 @@ export const PostParams = type({ id: coerceId });
 
 export const CreatePostBody = type({
   title: 'string>0',
-  slug: 'string>0',
+  'slug?': 'string>0',
   content: 'string>0',
   'excerpt?': 'string | null',
 });
