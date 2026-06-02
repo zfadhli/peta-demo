@@ -15,6 +15,7 @@ const columns = {
 export class User extends Model {
   static override table = 'users';
   static override columns = columns;
+  static override $visible = ['id', 'name'];
 }
 
 User.registerTimestamps();

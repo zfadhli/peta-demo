@@ -1,6 +1,8 @@
 import { type } from 'arktype';
 
-export const PostParams = type({ id: 'string' });
+const coerceId = type('string').pipe((s) => Number(s));
+
+export const PostParams = type({ id: coerceId });
 
 export const CreatePostBody = type({
   title: 'string>0',

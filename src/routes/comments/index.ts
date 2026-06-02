@@ -22,16 +22,7 @@ comments.post(
       const post = await Post.find(postId);
       if (!post) throw notFound();
       const comment = await Comment.insert({ content, postId, userId: c.var.userId });
-      return c.json(
-        {
-          id: comment.get('id'),
-          content: comment.get('content'),
-          userId: comment.get('userId'),
-          postId: comment.get('postId'),
-          createdAt: comment.get('createdAt'),
-        },
-        201,
-      );
+      return c.json(comment.$toJSON(), 201);
     }),
 );
 
@@ -47,10 +38,10 @@ comments.delete(
     .response(403, { description: 'Not your comment' })
     .handle(async (c) => {
       const { id } = c.req.valid('param');
-      const comment = await Comment.find(Number(id));
+      const comment = await Comment.find(id);
       if (!comment) throw notFound();
       if (comment.get('userId') !== c.var.userId) throw forbidden();
-      await Comment.delete(Number(id));
+      await Comment.delete(id);
       return c.json({ ok: true });
     }),
 );

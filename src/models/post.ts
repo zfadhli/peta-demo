@@ -24,6 +24,17 @@ export class Post extends Model {
     author: new BelongsTo(() => User),
     comments: new HasMany(() => Comment),
   };
+  static override $visible = [
+    'id',
+    'title',
+    'slug',
+    'content',
+    'excerpt',
+    'createdAt',
+    'updatedAt',
+    'author',
+    'comments',
+  ];
 }
 
 Post.registerTimestamps();

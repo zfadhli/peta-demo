@@ -21,6 +21,7 @@ export class Comment extends Model {
     post: new BelongsTo(() => Post),
     author: new BelongsTo(() => User),
   };
+  static override $visible = ['id', 'content', 'userId', 'postId', 'createdAt'];
 }
 
 Comment.registerTimestamps();

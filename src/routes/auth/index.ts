@@ -3,6 +3,7 @@ import { HTTPException } from 'hono/http-exception';
 import { hashPassword, verifyPassword } from 'peta-auth';
 import { route } from 'peta-hono';
 import { unauthorized } from '@/errors';
+import { pick } from '@/helpers';
 import { requireAuth } from '@/middleware/auth';
 import { User } from '@/models';
 import type { AppEnv } from '@/types';
@@ -26,7 +27,7 @@ auth.post(
       const session = c.get('session');
       session.userId = user.get('id');
       await session.save();
-      return c.json({ id: user.get('id'), name, email }, 201);
+      return c.json(pick(user, 'id', 'name', 'email'), 201);
     }),
 );
 
@@ -46,7 +47,7 @@ auth.post(
       const session = c.get('session');
       session.userId = user.get('id');
       await session.save();
-      return c.json({ id: user.get('id'), name: user.get('name'), email: user.get('email') });
+      return c.json(pick(user, 'id', 'name', 'email'));
     }),
 );
 
@@ -60,7 +61,7 @@ auth.get(
     .response(401, { description: 'Not authenticated' })
     .handle(async (c) => {
       const user = await User.findOrFail(c.var.userId);
-      return c.json({ id: user.get('id'), name: user.get('name'), email: user.get('email') });
+      return c.json(pick(user, 'id', 'name', 'email'));
     }),
 );
 

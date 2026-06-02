@@ -1,8 +1,10 @@
+import { type } from 'arktype';
 import { Hono } from 'hono';
 import { route } from 'peta-hono';
 import { forbidden, notFound } from '@/errors';
+import { pick } from '@/helpers';
 import { requireAuth } from '@/middleware/auth';
-import { Comment, Post, User } from '@/models';
+import { Post } from '@/models';
 import type { AppEnv } from '@/types';
 import { CreatePostBody, PostParams, UpdatePostBody } from './schema';
 
@@ -13,24 +15,31 @@ posts.get(
   route()
     .summary('List published posts')
     .paginated({ defaultLimit: 2 })
+    .filter(
+      'published',
+      type("'0'|'1'").pipe((s) => Number(s)),
+    )
+    .sort(['title', 'createdAt', 'updatedAt'])
     .response(200, { description: 'Paginated posts' })
     .handle(async (c) => {
-      const { page, limit, offset } = c.req.valid('query');
-      const results = await Post.query()
-        .where('published', '=', 1)
-        .orderBy('createdAt', 'desc')
-        .limit(limit)
-        .offset(offset)
-        .execute();
-      const total = await Post.query().where('published', '=', 1).count();
+      const { page, limit, offset, sort, published } = c.req.valid('query');
+      const sorts = sort ?? [];
+      const query = Post.query()
+        .where('published', '=', published ?? 1)
+        .when(sorts.length > 0, (q) => {
+          for (const s of sorts)
+            q.orderBy(s.startsWith('-') ? s.slice(1) : s, s.startsWith('-') ? 'desc' : 'asc');
+          return q;
+        })
+        .unless(sorts.length > 0, (q) => q.orderBy('createdAt', 'desc'));
+      const [results, total] = await Promise.all([
+        query.limit(limit).offset(offset).execute(),
+        Post.query()
+          .where('published', '=', published ?? 1)
+          .count(),
+      ]);
       return c.json({
-        data: results.map((p) => ({
-          id: p.get('id'),
-          title: p.get('title'),
-          slug: p.get('slug'),
-          excerpt: p.get('excerpt'),
-          createdAt: p.get('createdAt'),
-        })),
+        data: results.map((p) => pick(p, 'id', 'title', 'slug', 'excerpt', 'createdAt')),
         page,
         total,
       });
@@ -42,35 +51,21 @@ posts.get(
   route()
     .summary('Get a post by ID')
     .params(PostParams)
+    .include(['author', 'comments'])
     .response(200, { description: 'Post with comments' })
     .handle(async (c) => {
       const { id } = c.req.valid('param');
-      const post = await Post.query()
+      const { include = ['author', 'comments'] } = c.req.valid('query');
+      const query = Post.query()
         .where('published', '=', 1)
-        .where('id', '=', Number(id))
-        .executeTakeFirst();
+        .where('id', '=', id)
+        .when(include.includes('author'), (q) => q.with('author'))
+        .when(include.includes('comments'), (q) =>
+          q.with({ comments: (qb) => qb.orderBy('createdAt', 'asc') }),
+        );
+      const post = await query.executeTakeFirst();
       if (!post) throw notFound();
-      const author = await User.find(post.get('userId') as number);
-      const comments = await Comment.query()
-        .where('postId', '=', Number(id))
-        .orderBy('createdAt', 'asc')
-        .execute();
-      return c.json({
-        id: post.get('id'),
-        title: post.get('title'),
-        slug: post.get('slug'),
-        content: post.get('content'),
-        excerpt: post.get('excerpt'),
-        createdAt: post.get('createdAt'),
-        updatedAt: post.get('updatedAt'),
-        author: author ? { id: author.get('id'), name: author.get('name') } : null,
-        comments: comments.map((c) => ({
-          id: c.get('id'),
-          content: c.get('content'),
-          userId: c.get('userId'),
-          createdAt: c.get('createdAt'),
-        })),
-      });
+      return c.json(post.$toJSON());
     }),
 );
 
@@ -93,7 +88,7 @@ posts.post(
         published: true,
         userId: c.var.userId,
       });
-      return c.json({ id: post.get('id'), title: post.get('title'), slug: post.get('slug') }, 201);
+      return c.json(post.$toJSON(), 201);
     }),
 );
 
@@ -110,16 +105,16 @@ posts.put(
     .response(403, { description: 'Not your post' })
     .handle(async (c) => {
       const { id } = c.req.valid('param');
-      const post = await Post.find(Number(id));
+      const post = await Post.find(id);
       if (!post) throw notFound();
       if (post.get('userId') !== c.var.userId) throw forbidden();
       const data = c.req.valid('json');
-      const updated = await Post.update(Number(id), {
+      const updated = await Post.update(id, {
         title: data.title,
         content: data.content,
         excerpt: data.excerpt || null,
       });
-      return c.json({ id: updated.get('id'), title: updated.get('title') });
+      return c.json(updated.$toJSON());
     }),
 );
 
@@ -135,10 +130,10 @@ posts.delete(
     .response(403, { description: 'Not your post' })
     .handle(async (c) => {
       const { id } = c.req.valid('param');
-      const post = await Post.find(Number(id));
+      const post = await Post.find(id);
       if (!post) throw notFound();
       if (post.get('userId') !== c.var.userId) throw forbidden();
-      await Post.delete(Number(id));
+      await Post.delete(id);
       return c.json({ ok: true });
     }),
 );
